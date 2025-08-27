@@ -68,13 +68,30 @@ export default function CreatePollForm() {
                 placeholder={`Option ${idx + 1}`}
               />
               {options.length > 2 && (
-                <button type="button" onClick={() => removeOption(idx)} className="text-red-500">Remove</button>
+                <button
+                  type="button"
+                  onClick={() => removeOption(idx)}
+                  className="text-red-500"
+                >
+                  Remove
+                </button>
               )}
             </div>
           ))}
-          <button type="button" onClick={addOption} className="mt-2 px-3 py-1 bg-muted rounded">Add Option</button>
+          <button
+            type="button"
+            onClick={addOption}
+            className="mt-2 px-3 py-1 bg-muted rounded"
+          >
+            Add Option
+          </button>
         </div>
-        <button type="submit" className="w-full bg-primary text-primary-foreground py-2 rounded font-semibold">Create Poll</button>
+        <button
+          type="submit"
+          className="w-full bg-primary text-primary-foreground py-2 rounded font-semibold"
+        >
+          Create Poll
+        </button>
       </form>
     </Card>
   );

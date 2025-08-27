@@ -33,21 +33,41 @@ export default function RootLayout({
             <span className="text-2xl font-bold tracking-tight">Felipoll</span>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 flex-1">
-            <a href="/polls" className="bg-card shadow-lg rounded-xl p-6 flex flex-col items-center justify-center hover:bg-primary hover:text-primary-foreground transition font-semibold text-lg">
+            <a
+              href="/polls"
+              className="bg-card shadow-lg rounded-xl p-6 flex flex-col items-center justify-center hover:bg-primary hover:text-primary-foreground transition font-semibold text-lg"
+            >
               <span>Polls</span>
-              <span className="text-xs font-normal mt-2 text-muted-foreground">Browse & vote</span>
+              <span className="text-xs font-normal mt-2 text-muted-foreground">
+                Browse & vote
+              </span>
             </a>
-            <a href="/my-polls" className="bg-card shadow-lg rounded-xl p-6 flex flex-col items-center justify-center hover:bg-primary hover:text-primary-foreground transition font-semibold text-lg">
+            <a
+              href="/my-polls"
+              className="bg-card shadow-lg rounded-xl p-6 flex flex-col items-center justify-center hover:bg-primary hover:text-primary-foreground transition font-semibold text-lg"
+            >
               <span>My Polls</span>
-              <span className="text-xs font-normal mt-2 text-muted-foreground">Manage your polls</span>
+              <span className="text-xs font-normal mt-2 text-muted-foreground">
+                Manage your polls
+              </span>
             </a>
-            <a href="/create-poll" className="bg-card shadow-lg rounded-xl p-6 flex flex-col items-center justify-center hover:bg-primary hover:text-primary-foreground transition font-semibold text-lg">
+            <a
+              href="/create-poll"
+              className="bg-card shadow-lg rounded-xl p-6 flex flex-col items-center justify-center hover:bg-primary hover:text-primary-foreground transition font-semibold text-lg"
+            >
               <span>Create Poll</span>
-              <span className="text-xs font-normal mt-2 text-muted-foreground">Start a new poll</span>
+              <span className="text-xs font-normal mt-2 text-muted-foreground">
+                Start a new poll
+              </span>
             </a>
-            <a href="/auth" className="bg-card shadow-lg rounded-xl p-6 flex flex-col items-center justify-center hover:bg-primary hover:text-primary-foreground transition font-semibold text-lg">
+            <a
+              href="/auth"
+              className="bg-card shadow-lg rounded-xl p-6 flex flex-col items-center justify-center hover:bg-primary hover:text-primary-foreground transition font-semibold text-lg"
+            >
               <span>Login/Register</span>
-              <span className="text-xs font-normal mt-2 text-muted-foreground">Access your account</span>
+              <span className="text-xs font-normal mt-2 text-muted-foreground">
+                Access your account
+              </span>
             </a>
           </div>
         </nav>

@@ -15,7 +15,10 @@ export default function AuthForm() {
     setLoading(true);
     setError("");
     if (isLogin) {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
       if (error) setError(error.message);
     } else {
       const { error } = await supabase.auth.signUp({ email, password });
@@ -26,7 +29,9 @@ export default function AuthForm() {
 
   return (
     <Card className="max-w-md mx-auto p-6">
-      <h2 className="text-xl font-bold mb-4">{isLogin ? "Login" : "Register"}</h2>
+      <h2 className="text-xl font-bold mb-4">
+        {isLogin ? "Login" : "Register"}
+      </h2>
       <form onSubmit={handleSubmit} className="space-y-4">
         <input
           type="email"
@@ -45,7 +50,11 @@ export default function AuthForm() {
           required
         />
         {error && <div className="text-red-500 text-sm">{error}</div>}
-        <button type="submit" className="w-full bg-primary text-primary-foreground py-2 rounded font-semibold" disabled={loading}>
+        <button
+          type="submit"
+          className="w-full bg-primary text-primary-foreground py-2 rounded font-semibold"
+          disabled={loading}
+        >
           {loading ? "Processing..." : isLogin ? "Login" : "Register"}
         </button>
       </form>
@@ -53,7 +62,9 @@ export default function AuthForm() {
         className="mt-4 text-sm text-primary underline"
         onClick={() => setIsLogin((v) => !v)}
       >
-        {isLogin ? "Need an account? Register" : "Already have an account? Login"}
+        {isLogin
+          ? "Need an account? Register"
+          : "Already have an account? Login"}
       </button>
     </Card>
   );
