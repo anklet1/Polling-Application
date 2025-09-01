@@ -6,21 +6,73 @@ import { Card } from "@/components/ui/card";
 export default function MyPollsList() {
   const [polls, setPolls] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [voteCounts, setVoteCounts] = useState<Record<string, number[]>>({});
 
   useEffect(() => {
     async function fetchPolls() {
-      const { data, error } = await supabase.from("polls").select();
+      setError("");
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
+      if (sessionError) {
+        setError(sessionError.message);
+        setLoading(false);
+        return;
+      }
+      const userId = session?.user?.id;
+      const { data, error } = await supabase
+        .from("polls")
+        .select()
+        .eq("owner_id", userId || "");
       if (error) {
+        setError(error.message);
         setPolls([]);
       } else {
-        setPolls(data || []);
+        const pollsData = data || [];
+        setPolls(pollsData);
+        // Fetch vote counts per poll
+        const pollIds = pollsData.map((p: any) => p.id);
+        if (pollIds.length) {
+          const { data: votesData } = await supabase
+            .from("votes")
+            .select("poll_id, option_index")
+            .in("poll_id", pollIds);
+          const countsMap: Record<string, number[]> = {};
+          pollsData.forEach((p: any) => {
+            const counts = new Array((p.options || []).length).fill(0);
+            countsMap[p.id] = counts;
+          });
+          (votesData || []).forEach((v: any) => {
+            const arr = countsMap[v.poll_id];
+            if (arr && typeof v.option_index === "number") {
+              arr[v.option_index] = (arr[v.option_index] || 0) + 1;
+            }
+          });
+          setVoteCounts(countsMap);
+        }
       }
       setLoading(false);
     }
     fetchPolls();
   }, []);
 
+  const handleDelete = async (pollId: string) => {
+    setDeletingId(pollId);
+    setError("");
+    const { error } = await supabase.from("polls").delete().eq("id", pollId);
+    if (error) {
+      setError(error.message);
+    } else {
+      setPolls((prev) => prev.filter((p) => p.id !== pollId));
+    }
+    setDeletingId(null);
+  };
+
   if (loading) return <div>Loading polls...</div>;
+  if (error) return <div className="text-red-500">{error}</div>;
   if (!polls.length) return <div>No polls found.</div>;
   return (
     <div className="space-y-6">
@@ -35,9 +87,8 @@ export default function MyPollsList() {
                   className="flex items-center gap-4 justify-between"
                 >
                   <span className="flex-1">{option}</span>
-                  {/* Placeholder for votes */}
                   <span className="bg-muted px-2 py-1 rounded text-xs min-w-[70px] text-center">
-                    0 votes
+                    {(voteCounts[poll.id]?.[idx] || 0)} votes
                   </span>
                 </li>
               ))}
@@ -49,8 +100,12 @@ export default function MyPollsList() {
             <button className="px-3 py-1 bg-muted rounded hover:bg-muted/80 transition">
               Edit
             </button>
-            <button className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition">
-              Delete
+            <button
+              onClick={() => handleDelete(poll.id)}
+              disabled={deletingId === poll.id}
+              className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition disabled:opacity-60"
+            >
+              {deletingId === poll.id ? "Deleting..." : "Delete"}
             </button>
           </div>
         </Card>

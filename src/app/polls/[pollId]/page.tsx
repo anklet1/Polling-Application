@@ -1,100 +1,70 @@
-"use client";
-import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
-import { supabase } from "@/lib/supabaseClient";
+import { headers } from "next/headers";
 import { Card } from "@/components/ui/card";
+import PollQRCode from "@/features/polls/PollQRCode";
+import VoteForm from "@/features/polls/VoteForm";
 
-export default function PollDetailPage() {
-  const { pollId } = useParams();
-  const [poll, setPoll] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [voteLoading, setVoteLoading] = useState(false);
-  const [message, setMessage] = useState("");
-  const [votes, setVotes] = useState<number[]>([]);
-  const [totalVotes, setTotalVotes] = useState(0);
+type Poll = {
+  id: string;
+  question: string;
+  options: string[];
+};
 
-  useEffect(() => {
-    async function fetchPollAndVotes() {
-      const { data: pollData } = await supabase
-        .from("polls")
-        .select()
-        .eq("id", pollId)
-        .single();
-      setPoll(pollData);
-      if (pollData && Array.isArray(pollData.options)) {
-        const { data: voteData } = await supabase
-          .from("votes")
-          .select("option_index")
-          .eq("poll_id", pollId);
-        const counts = new Array(pollData.options.length).fill(0);
-        if (voteData) {
-          voteData.forEach((v: any) => {
-            if (typeof v.option_index === "number") counts[v.option_index]++;
-          });
-        }
-        setVotes(counts);
-        setTotalVotes(counts.reduce((a, b) => a + b, 0));
-      }
-      setLoading(false);
+const mockPolls: Record<string, Poll> = {
+  "1": {
+    id: "1",
+    question: "What's your favorite frontend framework?",
+    options: ["React", "Vue", "Svelte", "Angular"],
+  },
+  "2": {
+    id: "2",
+    question: "Pick a preferred CSS styling approach:",
+    options: ["Tailwind CSS", "CSS Modules", "Styled Components", "Vanilla CSS"],
+  },
+};
+
+export default async function PollDetailPage({
+  params,
+}: {
+  params: { pollId: string };
+}) {
+  const pollId = Array.isArray(params.pollId) ? params.pollId[0] : params.pollId;
+  const poll = mockPolls[pollId];
+
+  const hdrs = headers();
+  const host = hdrs.get("x-forwarded-host") || hdrs.get("host") || "";
+  const proto = hdrs.get("x-forwarded-proto") || "http";
+  const pollUrl = host ? `${proto}://${host}/polls/${pollId}` : `/polls/${pollId}`;
+
+  if (!poll) {
+    return (
+      <Card className="max-w-xl mx-auto p-6">
+        <h2 className="text-xl font-semibold">Poll not found</h2>
+      </Card>
+    );
+  }
+
+  async function submitVote(_: any, formData: FormData) {
+    "use server";
+    const submittedPollId = String(formData.get("pollId"));
+    const optionIndexRaw = formData.get("optionIndex");
+    const optionIndex = typeof optionIndexRaw === "string" ? parseInt(optionIndexRaw, 10) : -1;
+
+    if (!submittedPollId || Number.isNaN(optionIndex) || optionIndex < 0) {
+      return { ok: false, message: "Invalid submission" };
     }
-    fetchPollAndVotes();
-  }, [pollId, message]);
 
-  const handleVote = async (optionIdx: number) => {
-    setVoteLoading(true);
-    setMessage("");
-    const { error } = await supabase.from("votes").insert([
-      {
-        poll_id: pollId,
-        option_index: optionIdx,
-      },
-    ]);
-    if (error) {
-      setMessage("Error recording vote: " + error.message);
-    } else {
-      setMessage("Vote recorded! Thank you for voting.");
-    }
-    setVoteLoading(false);
-  };
+    // Mock side-effect: In a real app, insert into Supabase here.
+    await new Promise((r) => setTimeout(r, 300));
 
-  if (loading) return <div>Loading poll...</div>;
-  if (!poll) return <div>Poll not found.</div>;
+    return { ok: true, message: "Thanks for voting!" };
+  }
 
   return (
     <Card className="max-w-xl mx-auto p-6">
       <h2 className="text-2xl font-bold mb-4">{poll.question}</h2>
-      <ul className="space-y-2 mb-4">
-        {Array.isArray(poll.options) &&
-          poll.options.map((option: string, idx: number) => {
-            const count = votes[idx] || 0;
-            const percent = totalVotes
-              ? Math.round((count / totalVotes) * 100)
-              : 0;
-            return (
-              <li
-                key={option}
-                className="flex items-center gap-4 justify-between"
-              >
-                <span className="flex-1">{option}</span>
-                <button
-                  className="px-3 py-1 bg-primary text-primary-foreground rounded hover:bg-primary/80 transition"
-                  onClick={() => handleVote(idx)}
-                  disabled={voteLoading}
-                >
-                  Vote
-                </button>
-                <span className="ml-4 text-xs text-muted-foreground min-w-[70px] text-center">
-                  {count} votes ({percent}%)
-                </span>
-              </li>
-            );
-          })}
-      </ul>
-      {message && (
-        <div className="mt-4 text-green-600 font-semibold">{message}</div>
-      )}
-      <div className="mt-6 text-sm text-muted-foreground">
-        Total votes: {totalVotes}
+      <VoteForm pollId={poll.id} options={poll.options} action={submitVote} />
+      <div className="mt-6">
+        <PollQRCode pollUrl={pollUrl} />
       </div>
     </Card>
   );

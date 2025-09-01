@@ -1,98 +1,100 @@
 "use client";
-import { useState } from "react";
-import { Card } from "@/components/ui/card";
+import { useEffect, useState, useTransition } from "react";
+import { useActionState } from "react"; // ✅ correct import
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabaseClient";
+import { createPollAction } from "@/lib/actions/createPoll";
 
 export default function CreatePollForm() {
-  const [question, setQuestion] = useState("");
-  const [options, setOptions] = useState(["", ""]);
+  const [title, setTitle] = useState("");
+  const [options, setOptions] = useState<string[]>(["", ""]);
+  const [isPending, startTransition] = useTransition();
+  const [state, formAction] = useActionState(createPollAction, null);
 
-  const handleOptionChange = (idx: number, value: string) => {
-    setOptions((opts) => opts.map((opt, i) => (i === idx ? value : opt)));
+  const handleAddOption = () => {
+    setOptions([...options, ""]);
   };
 
-  const addOption = () => {
-    setOptions((opts) => [...opts, ""]);
-  };
-
-  const removeOption = (idx: number) => {
-    setOptions((opts) => opts.filter((_, i) => i !== idx));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const filteredOptions = options.filter(Boolean);
-    if (!question || filteredOptions.length < 2) {
-      alert("Please enter a question and at least two options.");
-      return;
-    }
-    const { error } = await supabase.from("polls").insert([
-      {
-        question,
-        options: filteredOptions,
-      },
-    ]);
-    if (error) {
-      alert("Error creating poll: " + error.message);
-    } else {
-      alert("Poll created successfully!");
-      setQuestion("");
-      setOptions(["", ""]);
-    }
+  const handleOptionChange = (index: number, value: string) => {
+    const updatedOptions = [...options];
+    updatedOptions[index] = value;
+    setOptions(updatedOptions);
   };
 
   return (
-    <Card className="max-w-xl mx-auto p-6">
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block font-semibold mb-1">Poll Question</label>
-          <input
-            type="text"
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-            className="w-full border rounded px-3 py-2"
-            required
-            placeholder="Enter your poll question"
-          />
-        </div>
-        <div>
-          <label className="block font-semibold mb-1">Answer Options</label>
-          {options.map((opt, idx) => (
-            <div key={idx} className="flex items-center gap-2 mb-2">
-              <input
-                type="text"
-                value={opt}
-                onChange={(e) => handleOptionChange(idx, e.target.value)}
-                className="flex-1 border rounded px-3 py-2"
-                required
-                placeholder={`Option ${idx + 1}`}
-              />
-              {options.length > 2 && (
-                <button
-                  type="button"
-                  onClick={() => removeOption(idx)}
-                  className="text-red-500"
-                >
-                  Remove
-                </button>
-              )}
-            </div>
-          ))}
-          <button
-            type="button"
-            onClick={addOption}
-            className="mt-2 px-3 py-1 bg-muted rounded"
-          >
-            Add Option
-          </button>
-        </div>
-        <button
-          type="submit"
-          className="w-full bg-primary text-primary-foreground py-2 rounded font-semibold"
+    <Card className="w-full max-w-md mx-auto shadow-lg rounded-2xl border border-gray-200">
+      <CardHeader className="text-center">
+        <CardTitle className="text-2xl font-semibold tracking-tight">
+          Create a New Poll
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form
+          action={formAction}
+          className="space-y-4"
         >
-          Create Poll
-        </button>
-      </form>
+          {/* Poll Title */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Poll Title</label>
+            <Input
+              type="text"
+              name="title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Enter your poll title"
+              required
+              className="focus:ring-2 focus:ring-primary/50"
+            />
+          </div>
+
+          {/* Poll Options */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Options</label>
+            <div className="space-y-2">
+              {options.map((option, index) => (
+                <Input
+                  key={index}
+                  type="text"
+                  name={`option-${index}`}
+                  value={option}
+                  onChange={(e) => handleOptionChange(index, e.target.value)}
+                  placeholder={`Option ${index + 1}`}
+                  required
+                  className="focus:ring-2 focus:ring-primary/50"
+                />
+              ))}
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="w-full"
+              onClick={handleAddOption}
+            >
+              + Add Option
+            </Button>
+          </div>
+
+          {/* Submit */}
+          <Button
+            type="submit"
+            disabled={isPending}
+            className="w-full"
+          >
+            {isPending ? "Creating..." : "Create Poll"}
+          </Button>
+
+          {/* Status / Errors */}
+          {state?.ok && (
+            <p className="text-sm text-green-500 mt-2">Poll created successfully</p>
+          )}
+          {state?.ok && (
+            <p className="text-sm text-red-500 mt-2">{state.message}</p>
+          )}
+        </form>
+      </CardContent>
     </Card>
   );
 }
